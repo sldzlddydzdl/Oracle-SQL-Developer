@@ -1,0 +1,279 @@
+
+	  업무적인 단위				물리적인 명령어 단위
+ 				----->		
+            계좌이체
+	이벤트 게시글 등록
+					LOCK   -> 그동안 다른 세션이 건드리지 못하도록 하는 lock
+						update 	-> 현재 세션을 위한 임시저장소에서 테스트
+						update
+					UNLOCK 
+
+					COMMIT;
+		
+
+
+Oracle 두개를 접속해서 다른 세션으로 작업한다.
+
+하나의 세션에서 
+
+UPDATE MEMBER SET PWD = '111' ,name = '오공' WHERE ID = 'dragon';
+
+을 치고 냅둔 상태에서
+
+다른 세션에서
+
+UPDATE MEMBER SET PWD = '222' ,name = '손오공' WHERE ID = 'dragon';
+을 치면 작업이 안되고 계속 기다리게된다. 왜냐하면
+
+먼저 입력한 세션에서 아직 LOCK에서 UNLOCK 으로 안바뀌었기때문에 
+먼저입력한 세션이 작업이 아직 안끝났으므로 다른세션에서
+데이터를 바꿀수 없는것이기 때문이다. (충돌을 막기위햬)
+먼저 입력한 세션에서 COMMIT; 을 해서 끝내면
+그다음에서야 다른 세션에서도
+UPDATE MEMBER SET PWD = '222' ,name = '손오공' WHERE ID = 'dragon';
+위의 명령문이 수행된다.
+
+--------------------------------- + 와 || -------------------------------------
+
+SELECT HIT+1 FROM NOTICE; -- 컬럼도 HIT+1 이 나온다.
+
+SELECT HIT+1 AS HIT FROM NOTICE; -- 컬럼 HIT 이나온다 
+
+SELECT HIT+1 HIT FROM NOTICE;
+
+--  + 숫자만 더하는 연산자
+SELECT 1+'3' FROM DUAL; -- Oracle 에서는 무조건 + 는 숫자만 더한다.
+                        -- 자바엿으면 1이 문자열로 바껴서 13 이 나왓겟지만
+                        -- Oracle 에서는 '3' 이 숫자로 바껴서 4가나온다.
+SELECT 1+'a' FROM DUAL;
+-- 오류난다 'a'를 숫자를 바꿀수 없어서 당연한거다.
+                        
+-- || 문자열만 더하는 연산자                        
+SELECT 1 || '3' FROM DUAL;
+
+-- 둘이 같은거 AS 를 안쓰는걸 추천하지만 나는아직 안익숙해서 AS를 쓰다가 안쓰는 방향으로 해야될거같다.
+데이터 조회하기 예 : 홍길동(hong) 처럼 조회하기.
+
+SELECT NAME || '(' || ID || ')' NAME FROM MEMBER;
+SELECT NAME || '(' || ID || ')' AS NAME FROM MEMBER;
+
+-------------------------------- 비교 연산자 -----------------------------------------
+
+= , != , ^= , < >  , >  ,  <  ,  >=  ,  <=  , IS NULL , IS NOT NULL
+
+< >  , != , ^= : 셋다 같지 않다. != 를 만이쓰자
+
+
+-- 게시글 중에서 작성자가 'newlec'인 게시글만 조회하시오.
+SELECT * FROM NOTICE WHERE WRITER_ID = 'newlec';
+
+-- 게시글 중에서 조회수가 3이 넘는 글만 조회하시오.
+SELECT * FROM NOTICE WHERE HIT > 3;
+
+-- 게시글 중에서 내용을 입력하지 않을 게시글을 조회하시오.
+SELECT * FROM NOTICE WHERE "CONTENT" = 'NULL';
+-- 오류남 왜냐하면 CONTENT라는 아이는 CLOB인데 진짜 NULL이라는 문자가 들어갓을수도잇어서 안된다.
+
+SELECT * FROM NOTICE WHERE "CONTENT" IS NULL;
+-- 따라서 NULL 은 특수한 문자이므로 위와같이 해줘야 게시글중에서 내용을 입력하지 않은 게시글이 조회된다.
+
+------------------------------------------ 관계 연산자 -------------------------------------
+
+NOT, AND, OR, BETWEEN, IN
+
+-- 조회수(HIT)가 0 ,1 ,2 인 게시글을 조회하시오.
+SELECT * FROM NOTICE WHERE HIT = 0 OR HIT =1 OR HIT =2;
+
+-- AND 연산자 써서 조회수(HIT)가 0 ,1 ,2 인 게시글을 조회하시오.
+SELECT * FROM NOTICE WHERE 0<= HIT AND HIT <= 2;
+
+-- BETWEEN AND 를 같이써서 
+SELECT * FROM NOTICE WHERE HIT BETWEEN 0 AND 2;
+
+-- 조회수가 0 ,2 ,7 인 게시글을 조회하시오. (OR 두번써서)
+SELECT * FROM NOTICE WHERE HIT = 0 OR HIT = 2 OR HIT = 7;
+
+-- 조회수가 0 ,2 ,7 인 게시글을 조회하시오.( IN 을 써서)
+SELECT * FROM NOTICE WHERE HIT IN (0 ,2 ,7);
+
+-- 조회수가 0, 2, 7 이 아닌 게시글을 조회하시오 ( NOT IN ) 
+SELECT * FROM NOTICE WHERE HIT NOT IN (0 ,2 ,7 );
+
+------------------------------------------ 패턴 연산자 ----------------------------------------
+
+LIKE , %, _
+
+
+SELECT * FROM MEMBER;
+
+-- 회원 중에서 '박'씨 성을 조회하시오
+SELECT * FROM MEMBER WHERE NAME = '박%';
+-- 위의 것은 진짜 박% 인것을 조회하는것이라 틀린다.
+
+SELECT * FROM MEMBER WHERE NAME LIKE '박%';
+-- LIKE 를 써야 패턴을 비교할때는 LIKE를써야한다!
+
+SELECT * FROM NOTICE WHERE TITLE LIKE 'J%';
+-- NOTICE에 J로시작하는 TITLE의 요소들을 조회해라
+
+--회원 중에서 '박'씨이고 이름이 외자인 회원을 조회하시오.
+SELECT * FROM MEMBER WHERE NAME LIKE '박_';
+-- 자리수를 한정할수있다 박으로 시작한 두글자 이름만 조회할수 있다.
+
+SELECT * FROM NOTICE WHERE TITLE LIKE 'J__________';
+-- NOTICE 테이블에서 타이틀이란 컬럼에 J로시작하고 11글자인 애들만 조회한다.
+
+SELECT * FROM MEMBER WHERE NAME NOT LIKE '박%';
+-- 회원중에서 '박' 씨 성을 제외한 회원을 조회하시오.
+
+SELECT * FROM MEMBER WHERE NAME LIKE '%도%'; 
+-- 회원중에서 이름에 '도'자가 들어가 회원을 조회하시오
+-- SELECT * FROM MEMBER WHERE NAME LIKE '도__' OR NAME LIKE '_도_' OR NAME LIKE '__도'; ( 틀림 )
+
+-- 게시글에서 TITLE에서 DB가 포함된 것을 조회하기
+SELECT * FROM NOTICE WHERE TITLE LIKE '%S%';
+
+------------------------------------------- 패턴 정규식 ------------------------------------------
+
+Regular Expression Functions
+
+SELECT * FROM NOTICE WHERE TITLE LIKE '%-%-%';
+-- (아무문자열)-(아무문자열)-(아무문자열) 의 패턴만 뽑으므로 만약에 번호만 뽑고싶다해도 문자열이 포함되어 글자도 함꼐 조회된다.
+
+
+REGEXP_LIKE
+
+WHERE REGEXP_LIKE ( first_name , '^Ste(v|ph)en$'  )
+
+
+
+
+010-2222-3333
+011-333-4444
+016-234-4353
+017-444-5555
+018-123-2345
+019-232-2345
+위와같은 패턴을 뽑고싶을 때 아래와 같은 정규식을 쓴다.
+^01[016-9]-\d{3,4}-\d{4}$
+
+-- 010 , 011 , 016, 017, 018, 019 를 조회한다는 뜻.
+-- \d 은 [0-9] 와 같다
+-- \d\d\d\d 는 \d{4}와같다.
+-- \d{3,4} 3자리나 4자리 
+
+-- 제목에 전화번호가 포함된 게시글을 조회하시오.
+SELECT * FROM NOTICE WHERE  REGEXP_LIKE(TITLE , '^01[016-9]-\d{3,4}-\d{4}$');
+-- 위에것은 진짜 번호만 있을때 그런 데이터들만 조회하는것이다 예 : 010-2345-3333
+-- 예 : 내 번호는 010-2345-3333 이야 이 데이터는 뽑아낼수가 없다.
+-- ^ 은 시작 $ 은 끝을 알리는것 즉 진짜 전화번호 첫번째 숫자에서시작해서 
+-- 전화번호 마지막번호까지 의 데이타만 입력된 애들을 조회할수있다.
+
+SELECT * FROM NOTICE WHERE  REGEXP_LIKE(TITLE , '01[016-9]-\d{3,4}-\d{4}');
+-- 따라서 위에같이 ^ , $ 를 없애야 전화번호가 들어간패턴을 포함한 데이터를 조회할수 있게된다.
+
+
+SELECT * FROM NOTICE WHERE  REGEXP_LIKE(TITLE , '\d{3}-\d{3,4}-\d{4}');
+-- 이친구는 010 011 016 017 018 019만 포함하는거에 비해 000 ~ 999 까지 그냥 다 포함시킨거다.
+
+
+
+
+--------------------------------- 문자열 비교를 위한 정규식 -------------------------------------
+
+정규식 공부 추천 사이트 : https://regex101.com/
+
+이메일 정규식
+
+\w+@ : 문자가 하나이상오고 @가 와야한다.
+\w+. : 문자가 하나이상와야하고 그다음.이 와야한다.
+(org|com|net) : org 또는 com 또는 net이 와야한다
+
+\w+@\w+.(org|com|net)
+
+*		0개 이상
+?		없어도되고 있어도되고
++ 		하나이상은 와야할때 
+\w		[a-zA-Z_0-9] 와 같다 
+|		이거나뜻
+\D		[^0-9] 0~9까지가 아닌걸로만 와야한다.
+
+
+이메일은
+
+11newlec@11nana.com 처럼 앞에 숫자가 못온다( 처음알음.... )
+따라서 \w+@\w+.(org|com|net) 이거는 숫자를 걸러내지 못한다.
+
+\D\w*@\D\w*.( org|com|net ) 을 써야 숫자를 방지할수있다.
+
+
+---------------------------------------- 행을 제한하기 --------------------------------------------
+
+회원 목록에서 상위 5명만 조회하시오
+
+ROWNUM 컬럼이 맨왼쪾에 자동으로 1씩증가해서 붙는다.
+
+SELECT * FROM MEMBER WHERE ROWNUM BETWEEN 1 AND 5;
+-- MEMBER태이블에서 ROWNUM 이 1부터 5까지만 조회한다.
+
+
+SELECT * FROM MEMBER WHERE ROWNUM BETWEEN 6 AND 10;
+-- 아무것도 안나온다. 또한 2 AND 5라해도안된다.
+SELECT * FROM MEMBER WHERE ROWNUM BETWEEN 2 AND 5;
+-- 이아이도 안나온다 
+
+
+SELECT ROWNUM , * FROM NOTICE;
+-- 에러
+
+
+SELECT NOTICE.ID, NOTICE.TITLE , NOTICE.WRITER_ID FROM NOTICE;
+-- 얼레는 위처럼 써야하는데 FROM NOTICE때문에 NOTICE.을 안써도된다.
+
+
+SELECT * FROM( SELECT ROWNUM  , NOTICE.* FROM NOTICE);
+WHERE ROWNUM BETWEEN 1 AND 5;
+-- 위와같이 쓰면 가로안에 있는 SELECT ROWNUM 은 가져오나 
+-- 맨첨에 SELECT * 에도 ROWNUM이 있어서 1부터 밖에 안된다.
+
+-- 따라서
+SELECT * FROM ( SELECT ROWNUM AS NUM , MEMBER.*FROM MEMBER) WHERE NUM BETWEEN 4 AND 8;
+-- ROWNUM 을  NUM이라는 이름으로 해줘야한다.  -> ROWNUM 4~8 이 조회된다.
+
+SELECT * FROM MEMBER;
+
+------------------------------------------- DISTINCT -------------------------------------------
+
+중복을 제거해주는 명렁어이다.
+
+SELECT AGE FROM MEMBER;
+-- MEMBER테이블에서 AGE 컬럼정보를 모두 조회한다.
+
+SELECT DISTINCT AGE FROM MEMBER;
+-- MEMBER 테이블에서 AGE컬럼정보를 모두 조회하는데 중복이 안되게 조회한다.
+
+SQL -> DBMS -> DATABASE
+ |
+DML
+ |
+SELECT -> 컬럼 선택, 컬럼 연산 ,별칭 -> 필터링
+
+ 
+SQL 이 무엇입니까 하면? 데이터베이스 관리시스템에게 질의하는 그런언어 명령어
+
+그럼 DBMS 가 무엇입니까? 라고하면 데이터베이스를 관리해주는 시스템입니다.
+
+DATABASE 라는 녀석이 데이터를 가운데에 모아놓고 쓰는거다보니까 동시성에문제라든지 
+보안문제라든지 해결할수 있어야해서 관ㄹ리시스템을 둿고
+
+DATABASE라는거는 뭐냐 데이터를 개별적으로 쓰는것이 아니라 모아서 쓰자
+
+그러다 보니까 가장 중요한 특징은 중복된것들은다 섞어내고 데이터를 단일 하게 관리하게 해주므로써
+
+결함을없애는 중복을 제거해서 결함을 없애는 특징을 가지고있다. 그러면 DATABASE
+
+관리해주는거는 SQL인데 DML 부분을 풀어서 쓰게되면은 INSERT, SELECT , UPDATE , DELETE
+
+이작업이 데이터를 관리할때 기본으로 쓰게되는 거다. Create  Retrieve  Update    Delete CRUD 작업이라한다.
+
+
